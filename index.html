@@ -20,6 +20,11 @@
       height: 100%;
       border: 0;
       background: #fff;
+      opacity: 0;
+      transition: opacity 0.22s ease;
+    }
+    #myIframe.is-ready {
+      opacity: 1;
     }
 
     /* شاشة التحميل المنقولة من التطبيق الأساسي */
@@ -196,6 +201,45 @@
       font-weight: 600;
     }
     .splash-footer .material-icons { color: #7dd3fc; font-size: 15px; }
+    .splash-error {
+      display: none;
+      width: min(100%, 360px);
+      margin-top: 18px;
+      padding: 13px 16px;
+      border: 1px solid rgba(252,165,165,0.35);
+      border-radius: 14px;
+      color: #fee2e2;
+      background: rgba(127,29,29,0.22);
+      font-size: 0.76rem;
+      font-weight: 600;
+      line-height: 1.7;
+    }
+    .splash-error.is-visible { display: block; }
+    .splash-retry {
+      display: none;
+      min-height: 44px;
+      margin-top: 14px;
+      padding: 8px 18px;
+      border: 1px solid rgba(224,242,254,0.35);
+      border-radius: 12px;
+      color: #fff;
+      background: rgba(14,165,233,0.22);
+      font: inherit;
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+    }
+    .splash-retry:hover,
+    .splash-retry:focus-visible {
+      border-color: rgba(224,242,254,0.72);
+      background: rgba(14,165,233,0.38);
+    }
+    .splash-retry:active { transform: translateY(1px); }
+    .splash-retry.is-visible { display: inline-flex; align-items: center; justify-content: center; }
+    @media (prefers-reduced-motion: reduce) {
+      #myIframe, .splash-retry { transition: none; }
+    }
     @keyframes splashReveal {
       from { opacity: 0; transform: translateY(18px); }
       to { opacity: 1; transform: translateY(-2vh); }
@@ -251,6 +295,12 @@
           <span class="splash-percent" id="splashPercent">12%</span>
         </div>
       </div>
+      <div class="splash-error" id="splashError" role="alert">
+        تعذر تحميل النظام. تحقق من الاتصال ثم أعد المحاولة.
+      </div>
+      <button class="splash-retry" id="splashRetry" type="button">
+        إعادة المحاولة
+      </button>
       <div class="splash-footer">
         <span class="material-icons" aria-hidden="true">verified_user</span>
         <span>بيئة عمل آمنة ومنظمة</span>
@@ -259,6 +309,7 @@
   </div>
   <iframe id="myIframe"
     title="نظام الأعمال اليومية"
+    aria-busy="true"
     src="https://script.google.com/macros/s/AKfycbzyvXr5p2Qa_ACEdSbDSws9PfxOn1pTllEhKvikAkZem17joS--KvddApSKZAdoW8JoRg/exec">
   </iframe>
   <script>
@@ -268,8 +319,12 @@
       var bar = document.getElementById('splashProgressBar');
       var percent = document.getElementById('splashPercent');
       var label = document.getElementById('splashProgressLabel');
-      var status = document.getElementById('splashStatus');
+       var status = document.getElementById('splashStatus');
+       var errorBox = document.getElementById('splashError');
+       var retry = document.getElementById('splashRetry');
       var hidden = false;
+       var loadingFailed = false;
+       var loadWatchdog;
 
       function setState(data) {
         var value = Math.max(0, Math.min(100, Number(data.percent) || 0));
@@ -284,12 +339,51 @@
       }
 
       function hideSplash() {
-        if (hidden) return;
+         if (hidden || loadingFailed) return;
+         clearTimeout(loadWatchdog);
         hidden = true;
+         iframe.classList.add('is-ready');
+         iframe.setAttribute('aria-busy', 'false');
         setState({ percent: 100, label: 'تم التحميل', message: 'جارٍ فتح النظام...' });
         splash.classList.add('hidden');
         setTimeout(function () { splash.style.display = 'none'; }, 500);
       }
+
+       function showLoadError() {
+         if (hidden) return;
+         clearTimeout(loadWatchdog);
+         loadingFailed = true;
+         setState({ percent: 100, label: 'تعذر التحميل', message: 'تعذر فتح النظام.' });
+         errorBox.classList.add('is-visible');
+         retry.classList.add('is-visible');
+         iframe.setAttribute('aria-busy', 'true');
+       }
+
+       function startLoadWatchdog() {
+         clearTimeout(loadWatchdog);
+         loadWatchdog = setTimeout(showLoadError, 30000);
+       }
+
+       function retryLoading() {
+         if (hidden) return;
+         loadingFailed = false;
+         errorBox.classList.remove('is-visible');
+         retry.classList.remove('is-visible');
+         iframe.classList.remove('is-ready');
+         iframe.setAttribute('aria-busy', 'true');
+         setState({ percent: 12, label: 'إعادة التهيئة', message: 'جارٍ إعادة تحميل بيئة العمل...' });
+         iframe.src = iframe.src;
+         startLoadWatchdog();
+       }
+
+       iframe.addEventListener('load', function () {
+         // load is the primary signal: it works even when the embedded app
+         // cannot communicate through postMessage.
+         hideSplash();
+       });
+       iframe.addEventListener('error', showLoadError);
+       retry.addEventListener('click', retryLoading);
+       startLoadWatchdog();
 
       window.addEventListener('message', function (event) {
         if (!iframe.contentWindow || event.source !== iframe.contentWindow) return;
