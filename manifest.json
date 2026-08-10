@@ -1,0 +1,16 @@
+{
+  "name": "الاعمال اليومية - المالية والحسابات",
+  "short_name": "الاعمال اليومية",
+  "start_url": "/dop/",
+  "scope": "/dop/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "https://i.ibb.co/PsVt0MSx/Kyo-Tux-Aeon-Misc-Document-256.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png"
+    }
+  ]
+}
