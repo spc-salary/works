@@ -1,24 +1,305 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-    <!-- ربط ملف الـ Manifest بمساره الصحيح داخل المجلد الفرعي -->
-<link rel="manifest" href="/works/manifest.json">
-<meta name="theme-color" content="#ffffff">
-    
-    <title>الاعمال اليومية</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <base target="_top">
-    <style>
-        /* إعدادات الصفحة لتظهر بشكل كامل */
-        body { margin: 0; padding: 0; overflow: hidden; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base target="_top">
+  <link rel="manifest" href="/works/manifest.json">
+  <meta name="theme-color" content="#071a33">
+  <title>الأعمال اليومية</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    :root { font-family: 'Cairo', 'Segoe UI', sans-serif; }
+    html, body { width: 100%; height: 100%; }
+    body { margin: 0; padding: 0; overflow: hidden; background: #071a33; }
+    #myIframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #fff;
+    }
+
+    /* شاشة التحميل المنقولة من التطبيق الأساسي */
+    #splash {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      isolation: isolate;
+      color: #fff;
+      background:
+        radial-gradient(circle at 16% 18%, rgba(14,165,233,0.28), transparent 28%),
+        radial-gradient(circle at 86% 82%, rgba(245,158,11,0.14), transparent 30%),
+        linear-gradient(145deg, #071a33 0%, #0b3157 52%, #064e6f 100%);
+      transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 0.8, 0.24, 1), visibility 0.55s ease;
+    }
+    #splash::before,
+    #splash::after {
+      content: '';
+      position: absolute;
+      pointer-events: none;
+      z-index: -1;
+    }
+    #splash::before {
+      width: min(72vw, 820px);
+      height: min(72vw, 820px);
+      top: -34%;
+      right: -18%;
+      border: 1px solid rgba(125,211,252,0.16);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 34px rgba(125,211,252,0.035),
+        0 0 0 70px rgba(125,211,252,0.025),
+        0 0 90px rgba(14,165,233,0.2);
+      animation: splashOrbit 18s linear infinite;
+    }
+    #splash::after {
+      inset: 0;
+      opacity: 0.24;
+      background-image:
+        linear-gradient(rgba(186,230,253,0.11) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(186,230,253,0.11) 1px, transparent 1px);
+      background-size: 46px 46px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent 82%);
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent 82%);
+      animation: splashGrid 16s linear infinite;
+    }
+    #splash.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: scale(1.04);
+    }
+    .splash-shell {
+      width: min(92vw, 520px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      transform: translateY(-2vh);
+      animation: splashReveal 0.8s cubic-bezier(0.22, 0.8, 0.24, 1) both;
+    }
+    .splash-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 26px;
+      color: rgba(224,242,254,0.8);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1.6px;
+    }
+    .splash-brand-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #fbbf24;
+      box-shadow: 0 0 0 5px rgba(251,191,36,0.12), 0 0 18px rgba(251,191,36,0.7);
+      animation: splashDot 1.8s ease-in-out infinite;
+    }
+    .splash-logo {
+      position: relative;
+      width: 108px;
+      height: 108px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      border: 1px solid rgba(224,242,254,0.38);
+      border-radius: 30px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.22), rgba(125,211,252,0.08));
+      box-shadow:
+        0 24px 60px rgba(2,8,23,0.34),
+        inset 0 1px 0 rgba(255,255,255,0.32),
+        0 0 0 10px rgba(125,211,252,0.06);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      animation: splashFloat 4s ease-in-out infinite;
+    }
+    .splash-logo::before,
+    .splash-logo::after {
+      content: '';
+      position: absolute;
+      border: 1px solid rgba(125,211,252,0.3);
+      border-radius: 36px;
+    }
+    .splash-logo::before { inset: -12px; animation: splashRing 2.8s ease-out infinite; }
+    .splash-logo::after { inset: -24px; opacity: 0.55; animation: splashRing 2.8s 0.85s ease-out infinite; }
+    .splash-logo .material-icons {
+      position: relative;
+      z-index: 1;
+      color: #fff;
+      font-size: 50px;
+      filter: drop-shadow(0 5px 12px rgba(2,8,23,0.28));
+    }
+    .splash-title {
+      color: #fff;
+      font-size: clamp(1.42rem, 4vw, 1.82rem);
+      font-weight: 800;
+      letter-spacing: -0.7px;
+      line-height: 1.4;
+    }
+    .splash-subtitle {
+      margin-top: 7px;
+      color: rgba(224,242,254,0.72);
+      font-size: 0.86rem;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+    .splash-status {
+      min-height: 24px;
+      margin-top: 28px;
+      color: rgba(224,242,254,0.88);
+      font-size: 0.78rem;
+      font-weight: 600;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+    .splash-status.is-changing { opacity: 0; transform: translateY(4px); }
+    .splash-progress-wrap { width: min(100%, 360px); margin-top: 13px; }
+    .splash-progress-track {
+      height: 5px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: rgba(224,242,254,0.16);
+      box-shadow: inset 0 1px 2px rgba(2,8,23,0.18);
+    }
+    .splash-progress-bar {
+      width: 12%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #38bdf8, #fbbf24);
+      box-shadow: 0 0 16px rgba(56,189,248,0.62);
+      transition: width 650ms cubic-bezier(0.22, 0.8, 0.24, 1);
+    }
+    .splash-progress-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      color: rgba(224,242,254,0.58);
+      font-size: 0.68rem;
+      font-weight: 600;
+    }
+    .splash-percent { color: rgba(255,255,255,0.9); }
+    .splash-footer {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 32px;
+      color: rgba(224,242,254,0.48);
+      font-size: 0.68rem;
+      font-weight: 600;
+    }
+    .splash-footer .material-icons { color: #7dd3fc; font-size: 15px; }
+    @keyframes splashReveal {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(-2vh); }
+    }
+    @keyframes splashFloat {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(1deg); }
+    }
+    @keyframes splashOrbit { to { transform: rotate(360deg); } }
+    @keyframes splashGrid { from { transform: translateY(0); } to { transform: translateY(46px); } }
+    @keyframes splashRing {
+      0% { opacity: 0.65; transform: scale(0.84); }
+      70%, 100% { opacity: 0; transform: scale(1.12); }
+    }
+    @keyframes splashDot {
+      0%, 100% { opacity: 0.65; transform: scale(0.86); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+    @media (max-width: 480px) {
+      .splash-shell { transform: translateY(-5vh); }
+      .splash-logo { width: 92px; height: 92px; border-radius: 26px; }
+      .splash-logo .material-icons { font-size: 43px; }
+      .splash-brand { margin-bottom: 20px; }
+      .splash-footer { margin-top: 26px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #splash::before, #splash::after, .splash-shell, .splash-logo,
+      .splash-logo::before, .splash-logo::after, .splash-brand-dot {
+        animation: none !important;
+      }
+    }
+  </style>
 </head>
 <body>
+  <div id="splash">
+    <div class="splash-shell" role="status" aria-live="polite" aria-label="جارٍ تجهيز النظام">
+      <div class="splash-brand">
+        <span class="splash-brand-dot" aria-hidden="true"></span>
+        <span>منصة الإدارة الرقمية</span>
+      </div>
+      <div class="splash-logo" aria-hidden="true">
+        <span class="material-icons">assignment_turned_in</span>
+      </div>
+      <div class="splash-title">نظام الأعمال اليومية</div>
+      <div class="splash-subtitle">المالية والحسابات</div>
+      <div class="splash-status" id="splashStatus">جارٍ تجهيز بيئة العمل...</div>
+      <div class="splash-progress-wrap" aria-hidden="true">
+        <div class="splash-progress-track">
+          <div class="splash-progress-bar" id="splashProgressBar"></div>
+        </div>
+        <div class="splash-progress-meta">
+          <span id="splashProgressLabel">التهيئة الأولية</span>
+          <span class="splash-percent" id="splashPercent">12%</span>
+        </div>
+      </div>
+      <div class="splash-footer">
+        <span class="material-icons" aria-hidden="true">verified_user</span>
+        <span>بيئة عمل آمنة ومنظمة</span>
+      </div>
+    </div>
+  </div>
+  <iframe id="myIframe"
+    title="نظام الأعمال اليومية"
+    src="https://script.google.com/macros/s/AKfycbzyvXr5p2Qa_ACEdSbDSws9PfxOn1pTllEhKvikAkZem17joS--KvddApSKZAdoW8JoRg/exec">
+  </iframe>
+  <script>
+    (function () {
+      var splash = document.getElementById('splash');
+      var iframe = document.getElementById('myIframe');
+      var bar = document.getElementById('splashProgressBar');
+      var percent = document.getElementById('splashPercent');
+      var label = document.getElementById('splashProgressLabel');
+      var status = document.getElementById('splashStatus');
+      var hidden = false;
 
-    <iframe id="myIframe" 
-            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" 
-            src="https://script.google.com/macros/s/AKfycbzyvXr5p2Qa_ACEdSbDSws9PfxOn1pTllEhKvikAkZem17joS--KvddApSKZAdoW8JoRg/exec">
-    </iframe>
+      function setState(data) {
+        var value = Math.max(0, Math.min(100, Number(data.percent) || 0));
+        bar.style.width = value + '%';
+        percent.textContent = Math.round(value) + '%';
+        label.textContent = data.label || '';
+        status.classList.add('is-changing');
+        setTimeout(function () {
+          status.textContent = data.message || '';
+          status.classList.remove('is-changing');
+        }, 120);
+      }
 
+      function hideSplash() {
+        if (hidden) return;
+        hidden = true;
+        setState({ percent: 100, label: 'تم التحميل', message: 'جارٍ فتح النظام...' });
+        splash.classList.add('hidden');
+        setTimeout(function () { splash.style.display = 'none'; }, 500);
+      }
+
+      window.addEventListener('message', function (event) {
+        if (!iframe.contentWindow || event.source !== iframe.contentWindow) return;
+        var data = event.data || {};
+        if (data.type !== 'daily-work-loading') return;
+        if (data.status === 'ready') hideSplash();
+        else if (data.status === 'progress') setState(data);
+      });
+
+    }());
+  </script>
 </body>
 </html>
