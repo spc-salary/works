@@ -42,7 +42,7 @@
         radial-gradient(circle at 16% 18%, rgba(14,165,233,0.28), transparent 28%),
         radial-gradient(circle at 86% 82%, rgba(245,158,11,0.14), transparent 30%),
         linear-gradient(145deg, #071a33 0%, #0b3157 52%, #064e6f 100%);
-      transition: opacity 1.55s ease, transform 0.55s cubic-bezier(0.22, 0.8, 0.24, 1), visibility 0.55s ease;
+      transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 0.8, 0.24, 1), visibility 0.55s ease;
     }
     #splash::before,
     #splash::after {
@@ -325,6 +325,10 @@
       var hidden = false;
        var loadingFailed = false;
        var loadWatchdog;
+       var hideTimer;
+       var hideRequested = false;
+       var splashStartedAt = Date.now();
+       var minimumSplashDuration = 2000;
 
       function setState(data) {
         var value = Math.max(0, Math.min(100, Number(data.percent) || 0));
@@ -339,14 +343,19 @@
       }
 
       function hideSplash() {
-         if (hidden || loadingFailed) return;
+         if (hidden || loadingFailed || hideRequested) return;
+         hideRequested = true;
          clearTimeout(loadWatchdog);
-        hidden = true;
-         iframe.classList.add('is-ready');
-         iframe.setAttribute('aria-busy', 'false');
         setState({ percent: 100, label: 'تم التحميل', message: 'جارٍ فتح النظام...' });
-        splash.classList.add('hidden');
-        setTimeout(function () { splash.style.display = 'none'; }, 500);
+         var elapsed = Date.now() - splashStartedAt;
+         var remaining = Math.max(0, minimumSplashDuration - elapsed);
+         hideTimer = setTimeout(function () {
+           hidden = true;
+           iframe.classList.add('is-ready');
+           iframe.setAttribute('aria-busy', 'false');
+           splash.classList.add('hidden');
+           setTimeout(function () { splash.style.display = 'none'; }, 500);
+         }, remaining);
       }
 
        function showLoadError() {
@@ -366,7 +375,10 @@
 
        function retryLoading() {
          if (hidden) return;
+         clearTimeout(hideTimer);
          loadingFailed = false;
+         hideRequested = false;
+         splashStartedAt = Date.now();
          errorBox.classList.remove('is-visible');
          retry.classList.remove('is-visible');
          iframe.classList.remove('is-ready');
